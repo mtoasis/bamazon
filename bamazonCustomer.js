@@ -31,7 +31,7 @@ function initiate() {
                 display()
             }
             else if (n.to_do === "Exit") {
-                connection.end()
+                
             }
 
         })
@@ -49,6 +49,7 @@ function display() {
                 "\n----------------------------------------"
             )
         }
+        connection.end()
         afterDisplay()
 
     })
