@@ -31,7 +31,8 @@ function initiate() {
                 display()
             }
             else if (n.to_do === "Exit") {
-                
+
+
             }
 
         })
@@ -49,9 +50,7 @@ function display() {
                 "\n----------------------------------------"
             )
         }
-        connection.end()
         afterDisplay()
-
     })
 }
 
@@ -68,6 +67,7 @@ function afterDisplay() {
             buy()
         }
         else {
+            connection.end()
 
         }
     })
@@ -80,6 +80,7 @@ function buy() {
         for (var i = 0; i < res.length; i++) {
             itemList[i] = res[i].product_name
         }
+        itemList.push("Exit")
 
         inquirer
             .prompt([
@@ -91,66 +92,72 @@ function buy() {
                 }
             ]).then(function (n) {
 
-                connection.query("SELECT * FROM products WHERE product_name=?",
-                    [n.to_buy],
-                    function (err, res) {
-                        var qunt_left = "how many would you like to order? (Max: " + res[0].stock_quantity + ")";
+                if (n.to_buy === "Exit") {
+                    connection.end()
+                }
+                else {
 
-                        inquirer.prompt([
+                    connection.query("SELECT * FROM products WHERE product_name=?",
+                        [n.to_buy],
+                        function (err, res) {
+                            var qunt_left = "how many would you like to order? (Max: " + res[0].stock_quantity + ")";
 
-                            {
-                                name: "howmany",
-                                type: "input",
-                                message: qunt_left
-                            }
+                            inquirer.prompt([
 
-                        ]).then(function (n) {
+                                {
+                                    name: "howmany",
+                                    type: "input",
+                                    message: qunt_left
+                                }
 
-                            if (Number(n.howmany) <= res[0].stock_quantity) {
+                            ]).then(function (n) {
 
-                                var disp =
-                                    "\nYour Order" +
-                                    "\n------------------------" +
-                                    "\nProduct Name: " + res[0].product_name +
-                                    "\nQuantity :" + n.howmany +
-                                    "\nTotal :" + (res[0].price * Number(n.howmany)) +
-                                    "\n------------------------" +
-                                    "\nIs this correct?";
-                                var orderQuant = n.howmany;
+                                if (Number(n.howmany) <= res[0].stock_quantity) {
 
-                                inquirer.prompt([
+                                    var disp =
+                                        "\nYour Order" +
+                                        "\n------------------------" +
+                                        "\nProduct Name: " + res[0].product_name +
+                                        "\nQuantity :" + n.howmany +
+                                        "\nTotal :" + (res[0].price * Number(n.howmany)) +
+                                        "\n------------------------" +
+                                        "\nIs this correct?";
+                                    var orderQuant = n.howmany;
 
-                                    {
-                                        name: "confirmation",
-                                        type: "list",
-                                        message: disp,
-                                        choices: ["Yes", "No"]
+                                    inquirer.prompt([
 
-                                    }
-                                ]).then(function (n) {
-                                    if (n.confirmation === "Yes") {
-                                        console.log("\nThank you, your order is proceeded\n")
-                                        updateSQL(res[0].product_name, res[0].stock_quantity, orderQuant)
-                            
+                                        {
+                                            name: "confirmation",
+                                            type: "list",
+                                            message: disp,
+                                            choices: ["Yes", "No"]
 
-                                    }
-                                    else if (n.confirmation === "No") {
-                                        buy()
-                                    }
-                                })
-                            }
-                            else {
-                                console.log("\nInsufficient quantity!")
-                                buy()
-                            }
+                                        }
+                                    ]).then(function (n) {
+                                        if (n.confirmation === "Yes") {
+                                            console.log("\nThank you, your order is proceeded\n")
+                                            updateSQL(res[0].product_name, res[0].stock_quantity, orderQuant)
+
+
+                                        }
+                                        else if (n.confirmation === "No") {
+                                            buy()
+                                        }
+                                    })
+                                }
+                                else {
+                                    console.log("\nInsufficient quantity!")
+                                    buy()
+                                }
+
+                            })
 
                         })
 
-                    })
 
-
-
+                }
             })
+
     })
 }
 
@@ -164,12 +171,14 @@ function updateSQL(product_name, old_quantity, new_quantity) {
     )
     connection.query("UPDATE products SET ? WHERE ?",
         [
-            {               
+            {
                 stock_quantity: quantity
             },
             {
                 product_name: product_name
             }
         ])
-        connection.end()
+    connection.end()
+    initiate()
+
 }

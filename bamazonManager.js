@@ -40,13 +40,15 @@ function initiate() {
             else if (n.to_do === "View Low Inventory") {
                 lowInventory()
             }
-            else if (n.to_do === "Add to Inventory"){
+            else if (n.to_do === "Add to Inventory") {
                 addInventory()
             }
-            else {
-
+            else if (n.to_do === "Add New Product") {
+                addNewProduct()
             }
-
+            else if (n.to_do === "Exit") {
+                connection.end()
+            }
         })
 }
 
@@ -62,7 +64,6 @@ function display() {
                 "\n----------------------------------------"
             )
         }
-        connection.end()
         initiate()
     })
 
@@ -82,7 +83,6 @@ function lowInventory() {
                 "\n----------------------------------------"
             )
         }
-        connection.end()
         initiate()
     })
 
@@ -115,7 +115,7 @@ function addInventory() {
                             {
                                 name: "howmany",
                                 type: "input",
-                                message: "How many would you like to add? (current: "+res[0].stock_quantity+")"
+                                message: "How many would you like to add? (current: " + res[0].stock_quantity + ")"
                             }
                         ]).then(function (n) {
 
@@ -148,8 +148,6 @@ function addInventory() {
                                 }
                             })
 
-                            connection.end()
-
                         })
                     })
             })
@@ -166,11 +164,83 @@ function updateSQL(product_name, old_quantity, new_quantity) {
     )
     connection.query("UPDATE products SET ? WHERE ?",
         [
-            {               
+            {
                 stock_quantity: quantity
             },
             {
                 product_name: product_name
             }
         ])
+    initiate()
+}
+
+function addNewProduct() {
+    inquirer.prompt([
+        {
+            name: "productName",
+            type: "input",
+            message: "What is name of the product?"
+        },
+
+        {
+            name: "department",
+            type: "input",
+            message: "What is the department of the product?"
+        },
+
+        {
+            name: "price",
+            type: "input",
+            message: "What is the price of the product?"
+        },
+
+        {
+            name: "howmany",
+            type: "input",
+            message: "how many would you like to add?"
+        }
+
+    ]).then(function (n) {
+        var productName = n.productName;
+        var department = n.department;
+        var price = n.price;
+        var quantity = n.howmany
+
+        var message = "\n--------------------" +
+            "\nUpdate info" +
+            "\nProduct Name: " + productName +
+            "\nDepartment: " + department +
+            "\nPrice: " + price +
+            "\nQuant: " + quantity +
+            "\n--------------------";
+
+        inquirer.prompt([
+            {
+
+                name: "confirmation",
+                type: "list",
+                message: message,
+                choices: ["Yes", "No"]
+
+            }
+        ]).then(function (n) {
+
+            if (n.confirmation === "Yes") {
+
+                connection.query("INSERT products SET ?",
+                    {
+                        product_name: productName,
+                        department_name: department,
+                        price: price,
+                        stock_quantity: quantity
+                    }
+
+                )
+                initiate()
+            }
+            else {
+                initiate()
+            }
+        })
+    })
 }
